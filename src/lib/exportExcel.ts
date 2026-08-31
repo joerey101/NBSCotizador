@@ -69,58 +69,60 @@ function formatearFecha(fechaStr?: string): string {
   return `Buenos Aires, ${dia} de ${mes} de ${anio}`;
 }
 
-export async function exportarPresupuestoExcel(params: {
-  lineas: LineaCotizacion[];
-  totales: Totales;
-  cliente: DatosCliente;
-  descuento: Descuento;
-  monedaPresupuesto: Moneda;
-}) {
-  const { lineas, totales, cliente, descuento, monedaPresupuesto } = params;
+function obtenerDatosImagen(raw?: string | null): { base64: string; extension: "png" | "jpeg" } | null {
+  if (!raw) return null;
+  const isJpeg = raw.includes("image/jpeg") || raw.includes("image/jpg") || raw.startsWith("/9j/");
+  const extension: "png" | "jpeg" = isJpeg ? "jpeg" : "png";
+  const base64 = raw.includes(",") ? raw.split(",")[1] : raw;
+  return { base64, extension };
+}
 
+export async function exportarPresupuestoExcel({
+  lineas,
+  totales,
+  cliente,
+  descuento,
+  monedaPresupuesto,
+}: ExportExcelParams): Promise<void> {
   const wb = new ExcelJS.Workbook();
   wb.creator = "NBS Bazar Profesional";
+  wb.lastModifiedBy = "NBS Cotizador";
   wb.created = new Date();
+  wb.modified = new Date();
 
   const ws = wb.addWorksheet("Presupuesto", {
-    views: [{ showGridLines: true }],
     pageSetup: {
       paperSize: 9, // A4
       orientation: "portrait",
       fitToPage: true,
       fitToWidth: 1,
       fitToHeight: 0,
-      margins: {
-        left: 0.4,
-        right: 0.4,
-        top: 0.4,
-        bottom: 0.4,
-        header: 0.2,
-        footer: 0.2,
-      },
     },
+    views: [{ showGridLines: true }],
   });
 
-  // Dimensiones de columnas calibradas para hoja A4 vertical
-  ws.columns = [
-    { key: "A", width: 2.5 },
-    { key: "B", width: 17 },
-    { key: "C", width: 33 },
-    { key: "D", width: 10 },
-    { key: "E", width: 14 },
-    { key: "F", width: 14 },
-  ];
+  // Configuración de anchos de columna calibrados
+  ws.getColumn("A").width = 2.5;
+  ws.getColumn("B").width = 17.0;
+  ws.getColumn("C").width = 33.0;
+  ws.getColumn("D").width = 10.0;
+  ws.getColumn("E").width = 14.0;
+  ws.getColumn("F").width = 14.0;
 
   // 1. Incrustar Logo oficial NBS con PROPORCIÓN 1:1 PERFECTA (Círculo redondo)
   try {
-    const logoId = wb.addImage({
-      base64: LOGO_NBS_BASE64,
-      extension: "png",
-    });
-    ws.addImage(logoId, {
-      tl: { col: 4.3, row: 0.3 },
-      ext: { width: 105, height: 105 },
-    });
+    const logoData = obtenerDatosImagen(LOGO_NBS_BASE64);
+    if (logoData) {
+      const logoId = wb.addImage({
+        base64: logoData.base64,
+        extension: logoData.extension,
+      });
+      ws.addImage(logoId, {
+        tl: { col: 4.2, row: 0.2 },
+        ext: { width: 105, height: 105 },
+        editAs: "oneCell",
+      });
+    }
   } catch (err) {
     console.warn("No se pudo agregar logo en Excel:", err);
   }
@@ -166,7 +168,7 @@ export async function exportarPresupuestoExcel(params: {
   ws.getCell("B8").value = `De: ${cliente.vendedor || "Stella Diaz Ruiz - Marcelo Castillo"}`;
   ws.getCell("B8").font = fontHeader;
 
-  // 3. Banner "Presupuesto" (Fila 10) -> B10:F10 con borde superior y lateral
+  // 3. Banner "Presupuesto" (Fila 10)
   ws.mergeCells("B10:F10");
   const bannerCell = ws.getCell("B10");
   bannerCell.value = "Presupuesto";
@@ -175,7 +177,7 @@ export async function exportarPresupuestoExcel(params: {
   bannerCell.fill = {
     type: "pattern",
     pattern: "solid",
-    fgColor: { argb: "FF365F91" }, // Azul institucional NBS
+    fgColor: { argb: "FF365F91" },
   };
   bannerCell.border = {
     top: mediumSide,
@@ -185,7 +187,7 @@ export async function exportarPresupuestoExcel(params: {
   };
   ws.getRow(10).height = 24;
 
-  // 4. Encabezados de Tabla (Fila 11) -> Alto exacto = 32
+  // 4. Encabezados de Tabla
   const headers = [
     { col: "B", label: "Código/ Observaciones" },
     { col: "C", label: "Descripción" },
@@ -213,30 +215,28 @@ export async function exportarPresupuestoExcel(params: {
     };
   }
 
-  // 5. Filas de productos (Fila 12 en adelante)
+  // 5. Filas de productos
   let rowIdx = 12;
   for (const linea of lineas) {
     const row = ws.getRow(rowIdx);
-
-    // Solo familia genérica (SIN código según pedido de Jose)
     const familia = obtenerFamilia(linea.origen, linea.marca);
 
-    // Altura de fila calibrada con precisión
     const textoDesc = linea.producto || "";
     const cantCaracteres = textoDesc.length;
     const saltosLinea = (textoDesc.match(/\n/g) || []).length;
-    // Times New Roman 11pt en columna ancho 33 promedia ~38 caracteres por línea
     const lineasEstimadas = Math.max(1, Math.ceil(cantCaracteres / 38) + saltosLinea);
     
-    const altoFoto = linea.imagen ? 58 : 26;
-    const altoPorTexto = lineasEstimadas * 14.5 + 8;
-    const altoFilaFinal = Math.max(altoFoto, Math.round(altoPorTexto));
-    row.height = altoFilaFinal;
+    // Altura según presencia de imagen y longitud de descripción
+    if (linea.imagen) {
+      row.height = Math.max(48, lineasEstimadas * 15 + 6);
+    } else {
+      row.height = Math.max(22, lineasEstimadas * 15 + 4);
+    }
 
-    // Celda B (Solo Familia / Foto): Centrado horizontal y alineado al fondo (bottom)
+    // Celda B (Familia genérica)
     const cellB = ws.getCell(`B${rowIdx}`);
     cellB.value = familia;
-    cellB.font = { name: "Calibri", size: 10, bold: false };
+    cellB.font = fontDesc;
     cellB.alignment = { horizontal: "center", vertical: "bottom", wrapText: true };
     cellB.border = {
       top: thinSide,
@@ -248,20 +248,24 @@ export async function exportarPresupuestoExcel(params: {
     // Foto embebida en la parte superior de la celda B si existe
     if (linea.imagen) {
       try {
-        const imgId = wb.addImage({
-          base64: linea.imagen,
-          extension: "png",
-        });
-        ws.addImage(imgId, {
-          tl: { col: 1.15, row: rowIdx - 0.98 },
-          ext: { width: 70, height: 44 },
-        });
+        const imgData = obtenerDatosImagen(linea.imagen);
+        if (imgData) {
+          const imgId = wb.addImage({
+            base64: imgData.base64,
+            extension: imgData.extension,
+          });
+          ws.addImage(imgId, {
+            tl: { col: 1.1, row: (rowIdx - 1) + 0.05 },
+            ext: { width: 70, height: 44 },
+            editAs: "oneCell",
+          });
+        }
       } catch (e) {
         console.warn("No se pudo incrustar imagen en fila:", rowIdx, e);
       }
     }
 
-    // Celda C (Descripción) con ajuste de texto wrapText
+    // Celda C (Descripción)
     const cellC = ws.getCell(`C${rowIdx}`);
     cellC.value = linea.producto;
     cellC.font = fontDesc;
@@ -270,7 +274,8 @@ export async function exportarPresupuestoExcel(params: {
 
     // Celda D (Cantidad)
     const cellD = ws.getCell(`D${rowIdx}`);
-    cellD.value = Number(linea.cantidad) || 1;
+    const cantVal = Number(linea.cantidad) || 1;
+    cellD.value = cantVal;
     cellD.font = fontNum;
     cellD.alignment = { horizontal: "center", vertical: "middle" };
     cellD.numFmt = "#,##0";
@@ -286,9 +291,10 @@ export async function exportarPresupuestoExcel(params: {
     cellE.numFmt = "#,##0.00";
     cellE.border = cellBorder;
 
-    // Celda F (Fórmula de Importe)
+    // Celda F (Fórmula de Importe con result precalculado)
+    const subLinea = calc?.subtotalPresupuesto ?? (pu * cantVal);
     const cellF = ws.getCell(`F${rowIdx}`);
-    cellF.value = { formula: `+E${rowIdx}*D${rowIdx}` };
+    cellF.value = { formula: `E${rowIdx}*D${rowIdx}`, result: subLinea };
     cellF.font = fontNum;
     cellF.alignment = { horizontal: "right", vertical: "middle" };
     cellF.numFmt = "#,##0.00";
@@ -305,7 +311,7 @@ export async function exportarPresupuestoExcel(params: {
   const subtotalRow = rowIdx;
   ws.getRow(subtotalRow).height = 24;
 
-  // 6. Sub-Total con bordes destacados
+  // 6. Sub-Total
   for (const c of ["B", "C", "D"]) {
     const cell = ws.getCell(`${c}${subtotalRow}`);
     cell.border = {
@@ -328,7 +334,7 @@ export async function exportarPresupuestoExcel(params: {
   };
 
   const subVal = ws.getCell(`F${subtotalRow}`);
-  subVal.value = { formula: `SUM(F12:F${subtotalRow - 1})` };
+  subVal.value = { formula: `SUM(F12:F${subtotalRow - 1})`, result: totales.subtotal };
   subVal.font = { name: "Calibri", size: 11, bold: true };
   subVal.alignment = { horizontal: "right", vertical: "middle" };
   subVal.numFmt = "#,##0.00";
@@ -341,7 +347,6 @@ export async function exportarPresupuestoExcel(params: {
 
   let cursorRow = subtotalRow + 1;
 
-  // Descuento si aplica
   if (totales.descuentoMonto > 0) {
     ws.getRow(cursorRow).height = 20;
     for (const c of ["B", "C", "D"]) {
@@ -371,7 +376,6 @@ export async function exportarPresupuestoExcel(params: {
     };
     cursorRow++;
 
-    // Total con descuento
     ws.getRow(cursorRow).height = 24;
     for (const c of ["B", "C", "D"]) {
       ws.getCell(`${c}${cursorRow}`).border = {
@@ -393,7 +397,7 @@ export async function exportarPresupuestoExcel(params: {
     };
 
     const totVal = ws.getCell(`F${cursorRow}`);
-    totVal.value = { formula: `+F${subtotalRow}-F${cursorRow - 1}` };
+    totVal.value = { formula: `F${subtotalRow}-F${cursorRow - 1}`, result: totales.total };
     totVal.font = { name: "Calibri", size: 11, bold: true };
     totVal.alignment = { horizontal: "right", vertical: "middle" };
     totVal.numFmt = "#,##0.00";
@@ -406,9 +410,9 @@ export async function exportarPresupuestoExcel(params: {
     cursorRow++;
   }
 
-  cursorRow += 2; // Espacio en blanco
+  cursorRow += 2;
 
-  // 7. Condiciones Comerciales y Pie de Página
+  // 7. Condiciones Comerciales
   const nombreMoneda = NOMBRES_MONEDA[monedaPresupuesto] || "Pesos Argentinos";
   const notas = [
     "Los Precios No Incluyen IVA .-",
