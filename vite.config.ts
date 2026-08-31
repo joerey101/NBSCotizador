@@ -29,9 +29,9 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: "NBS Cotizador",
-        short_name: "NBS",
-        description: "Cotizador NBS Bazar Profesional",
+        name: "NBS Bazar",
+        short_name: "NBS Bazar",
+        description: "Catálogo y Cotizador NBS Bazar Profesional",
         theme_color: "#1a1a2e",
         background_color: "#1a1a2e",
         display: "standalone",
