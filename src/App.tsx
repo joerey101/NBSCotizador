@@ -11,6 +11,7 @@ import { useLocalStorage } from "./ui/useLocalStorage";
 import { useCotizacion } from "./ui/useCotizacion";
 import { exportarCotizacion, parseCotizacion } from "./ui/draft";
 import { exportarPresupuestoExcel } from "./lib/exportExcel";
+import logoNbs from "./assets/logo_nbs.png";
 
 const EJEMPLOS = ["germer", "paderno", "neovac", "plato playo", "copa"];
 
@@ -95,11 +96,14 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <h1>NBS · Catálogo y Cotización</h1>
-          <span className="sub">
-            {md.total_productos.toLocaleString("es-AR")} productos · {md.archivos_procesados} listas ·
-            monedas {md.monedas_detectadas.join(" / ")}
-          </span>
+          <img src={logoNbs} alt="Logo NBS" className="brand-logo" />
+          <div className="brand-text">
+            <h1>NBS · Catálogo y Cotización</h1>
+            <span className="sub">
+              {md.total_productos.toLocaleString("es-AR")} productos · {md.archivos_procesados} listas ·
+              monedas {md.monedas_detectadas.join(" / ")}
+            </span>
+          </div>
         </div>
         <div className="topbar-actions">
           <RateBar monedaPresupuesto={monedaPresupuesto} onMoneda={setMoneda} tc={tc} onTc={setTc} />
