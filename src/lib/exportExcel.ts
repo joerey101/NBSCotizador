@@ -19,6 +19,10 @@ const MESES = [
 // Glosario genérico por familia/origen
 export const MAPEO_FAMILIAS: Record<string, string> = {
   "Acermel": "Acero Inox.",
+  "Arthur Krupp": "Arthur Krupp",
+  "Rational": "Rational",
+  "CAMBRO": "Cambro",
+  "Chaffing Dish": "Chaffing Dish",
   "Turboblender": "Imp.",
   "Inoxriv": "Acero Inox.",
   "GN Acero Inox.": "Acero Inox.",
@@ -29,6 +33,7 @@ export const MAPEO_FAMILIAS: Record<string, string> = {
   "Porcelana Verbano": "Verbano",
   "Pasabahce": "Vidrio",
   "Nude (Copas Cristal)": "Cristal",
+  "Cristalería Barra": "Vidrio",
   "Melamina Profesional": "Melamina",
   "Tablas de Corte (Polipropileno)": "Tablas",
   "Neovac (Bolsas de Vacío)": "Neovac",
@@ -36,11 +41,14 @@ export const MAPEO_FAMILIAS: Record<string, string> = {
   "Hamilton Beach Commercial": "Hamilton Beach",
   "Nemco": "Nemco",
   "Metvisa": "Metvisa",
+  "Lista Vajilla Baralee": "Baralee",
   "Baralee": "Baralee",
   "Nicols": "Nicols",
   "Sartenes Antiadherentes": "Sartenes",
   "Jarras Térmicas": "Jarras",
   "Nadir": "Vidrio",
+  "Radici": "Radici",
+  "Sambonet": "Sambonet",
 };
 
 function obtenerFamilia(origen: string, marca?: string | null): string {

@@ -14,8 +14,8 @@ export default defineConfig({
       workbox: {
         // Cachear todo el build (JS, CSS, HTML, datos)
         globPatterns: ["**/*.{js,css,html,ico,png,svg,json}"],
-        // Límite generoso porque el bundle con catálogo es grande
-        maximumFileSizeToCacheInBytes: 60 * 1024 * 1024,
+        // Límite generoso porque el bundle con catálogo completo de 8.777 productos es grande
+        maximumFileSizeToCacheInBytes: 150 * 1024 * 1024,
         // Estrategia: servir desde caché primero, actualizar en background
         runtimeCaching: [
           {
@@ -60,6 +60,6 @@ export default defineConfig({
   ],
   build: {
     target: "es2020",
-    chunkSizeWarningLimit: 60000,
+    chunkSizeWarningLimit: 150000,
   },
 });
