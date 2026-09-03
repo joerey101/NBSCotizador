@@ -163,30 +163,32 @@ export default function App() {
           </div>
         </main>
 
-        <CotizacionPanel
-          lineas={cot.lineas}
-          totales={totales}
-          monedaPresupuesto={monedaPresupuesto}
-          descuento={cot.descuento}
-          cliente={cliente}
-          onCliente={setCliente}
-          onDescuento={cot.setDescuento}
-          onCantidad={cot.setCantidad}
-          onPrecio={cot.setPrecio}
-          onQuitar={cot.quitar}
-          onLimpiar={cot.limpiar}
-          onExportar={() =>
-            exportarCotizacion({
-              monedaPresupuesto,
-              tasas: tc,
-              descuento: cot.descuento,
-              cliente,
-              lineas: cot.lineas,
-            })
-          }
-          onImportar={onImportar}
-          onDescargarExcel={handleDescargarExcel}
-        />
+        <div className="cotizacion-wrapper">
+          <CotizacionPanel
+            lineas={cot.lineas}
+            totales={totales}
+            monedaPresupuesto={monedaPresupuesto}
+            descuento={cot.descuento}
+            cliente={cliente}
+            onCliente={setCliente}
+            onDescuento={cot.setDescuento}
+            onCantidad={cot.setCantidad}
+            onPrecio={cot.setPrecio}
+            onQuitar={cot.quitar}
+            onLimpiar={cot.limpiar}
+            onExportar={() =>
+              exportarCotizacion({
+                monedaPresupuesto,
+                tasas: tc,
+                descuento: cot.descuento,
+                cliente,
+                lineas: cot.lineas,
+              })
+            }
+            onImportar={onImportar}
+            onDescargarExcel={handleDescargarExcel}
+          />
+        </div>
       </div>
     </div>
   );
