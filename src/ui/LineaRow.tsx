@@ -37,6 +37,7 @@ export function LineaRow({ l, calc, monedaPresupuesto, onCantidad, onPrecio, onQ
           <input
             type="number" min={0} step="any" className="in-cant"
             value={l.cantidad}
+            onFocus={(e) => e.target.select()}
             onChange={(e) => onCantidad(l.uid, Math.max(0, Number(e.target.value) || 0))}
           />
         </label>
@@ -47,6 +48,7 @@ export function LineaRow({ l, calc, monedaPresupuesto, onCantidad, onPrecio, onQ
             type="number" min={0} step="any" className="in-precio"
             placeholder="cargar"
             value={l.precioUnitarioOriginal ?? ""}
+            onFocus={(e) => e.target.select()}
             onChange={(e) => {
               const v = e.target.value;
               onPrecio(l.uid, v === "" ? null : Math.max(0, Number(v) || 0));
