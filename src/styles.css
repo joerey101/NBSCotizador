@@ -88,6 +88,11 @@ body { margin: 0; background: var(--bg); color: var(--text); transition: backgro
   gap: 12px;
   flex-wrap: wrap;
 }
+@media (max-width: 600px) {
+  .topbar-actions { width: 100%; }
+  .ratebar { width: 100%; }
+  .tasas label { flex: 1; }
+}
 
 /* Botón de Modo Oscuro */
 .btn-theme-toggle {
@@ -145,6 +150,8 @@ body { margin: 0; background: var(--bg); color: var(--text); transition: backgro
 @media (max-width: 600px) {
   .filtros { flex-direction: column; gap: 6px; }
   .filtros select { width: 100%; max-width: 100%; font-size: 14px; padding: 10px 12px; }
+  .filtros select:nth-child(2),
+  .filtros select:nth-child(3) { display: none; }
 }
 .btn-limpiar {
   border: 1px solid var(--border); background: var(--panel-secondary); border-radius: 8px;
