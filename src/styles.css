@@ -141,6 +141,10 @@ body { margin: 0; background: var(--bg); color: var(--text); transition: backgro
   padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--input-bg); color: var(--text); font-size: 13px; max-width: 260px;
 }
+@media (max-width: 600px) {
+  .filtros { flex-direction: column; gap: 6px; }
+  .filtros select { width: 100%; max-width: 100%; font-size: 14px; padding: 10px 12px; }
+}
 .btn-limpiar {
   border: 1px solid var(--border); background: var(--panel-secondary); border-radius: 8px;
   padding: 7px 12px; cursor: pointer; font-size: 13px; color: var(--muted);
