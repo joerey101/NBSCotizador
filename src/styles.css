@@ -236,6 +236,27 @@ body { margin: 0; background: var(--bg); color: var(--text); transition: backgro
 .tasas { display: flex; gap: 10px; }
 .tasas label { display: flex; flex-direction: column; font-size: 11px; color: var(--muted); }
 .tasas input { width: 92px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; margin-top: 2px; background: var(--input-bg); color: var(--text); }
+
+/* Botón auto-fetch tasas BNA */
+.tasas-auto { display: flex; flex-direction: column; gap: 4px; justify-content: flex-end; }
+.btn-fetch-tasas {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 13px; border-radius: 8px; border: 1.5px solid var(--accent);
+  background: transparent; color: var(--accent); font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.btn-fetch-tasas:hover:not(:disabled) { background: var(--accent); color: #fff; }
+.btn-fetch-tasas:disabled { opacity: .6; cursor: not-allowed; }
+.btn-fetch-tasas.ok { border-color: #22c55e; color: #22c55e; }
+.btn-fetch-tasas.ok:hover { background: #22c55e; color: #fff; }
+.btn-fetch-tasas.err { border-color: #ef4444; color: #ef4444; }
+.btn-fetch-tasas.err:hover { background: #ef4444; color: #fff; }
+.btn-fetch-tasas.loading { border-color: var(--muted); color: var(--muted); }
+.fetch-msg { font-size: 10px; color: var(--muted); }
+.fetch-msg.fetch-err { color: #ef4444; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin .7s linear infinite; }
 @media (max-width: 600px) {
   .ratebar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; width: 100%; }
   .tasas { flex-direction: column; gap: 6px; }
