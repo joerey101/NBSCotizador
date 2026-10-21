@@ -62,6 +62,7 @@ export function ResultCard({ p, monedaPresupuesto, tc, onAgregar }: Props) {
             {p.origen}
           </span>
           {p.linea && <span className="chip chip-linea">Línea: {p.linea}</span>}
+          {p.modelo && <span className="chip chip-linea">Acabado: {p.modelo}</span>}
           <span className="chip chip-pres">{p.presentacion}</span>
           {p.categoria && <span className="chip chip-cat">{p.categoria}</span>}
           <span className="chip chip-moneda">{p.moneda}</span>

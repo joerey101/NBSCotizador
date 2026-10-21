@@ -63,7 +63,8 @@ export function crearLinea(p: Producto): LineaCotizacion {
   return {
     uid: nuevoUid(),
     productoId: p.id,
-    producto: p.producto,
+    // el acabado distingue ítems con el mismo código y otro precio (ej. Sambonet Vintage / Vintage PVD)
+    producto: p.modelo ? `${p.producto} — ${p.modelo}` : p.producto,
     origen: p.origen,
     marca: p.marca,
     codigo_origen: p.codigo_origen,
