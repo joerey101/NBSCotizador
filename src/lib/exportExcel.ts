@@ -5,6 +5,14 @@ import type { Moneda, DatosCliente } from "./types";
 import type { Descuento, LineaCotizacion, Totales } from "./cotizacion";
 import { LOGO_NBS_BASE64 } from "./logoBase64";
 
+export interface ExportExcelParams {
+  lineas: LineaCotizacion[];
+  totales: Totales;
+  cliente: DatosCliente;
+  descuento: Descuento;
+  monedaPresupuesto: Moneda;
+}
+
 const NOMBRES_MONEDA: Record<Moneda, string> = {
   ARS: "Pesos Argentinos",
   USD: "Dólares Estadounidenses",
