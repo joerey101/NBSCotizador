@@ -16,7 +16,11 @@ import { pedirAlCotizador } from "../../lib/eventos";
 import { listarPresupuestos, type PresupuestoFila } from "../../lib/presupuestos";
 import { ir } from "../../lib/ruta";
 import { ClienteForm } from "./ClienteForm";
+import { useVendedores } from "./VendedorSelect";
+import { nombreVendedor } from "../../lib/equipo";
 import { FilaPresupuesto } from "./PresupuestosLista";
+import { LineaDeTiempo } from "./LineaDeTiempo";
+import { formatoPesos, listarOportunidades, NOMBRE_ETAPA, type Oportunidad } from "../../lib/oportunidades";
 
 function ContactoForm({
   inicial,
@@ -96,20 +100,24 @@ export function ClienteFicha({ id }: { id: string }) {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [contactos, setContactos] = useState<Contacto[]>([]);
   const [presupuestos, setPresupuestos] = useState<PresupuestoFila[] | null>(null);
+  const [oportunidades, setOportunidades] = useState<Oportunidad[] | null>(null);
+  const vendedores = useVendedores();
   const [editando, setEditando] = useState(false);
   const [contactoEnEdicion, setContactoEnEdicion] = useState<Contacto | "nuevo" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     try {
-      const [c, cs, ps] = await Promise.all([
+      const [c, cs, ps, os] = await Promise.all([
         obtenerCliente(id),
         listarContactos(id),
         listarPresupuestos({ clienteId: id, limite: 50 }),
+        listarOportunidades({ clienteId: id }),
       ]);
       setCliente(c);
       setContactos(cs);
       setPresupuestos(ps);
+      setOportunidades(os);
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -190,6 +198,13 @@ export function ClienteFicha({ id }: { id: string }) {
           <Dato
             etiqueta="Dirección"
             valor={[cliente.direccion, cliente.ciudad, cliente.provincia, cliente.pais].filter(Boolean).join(", ") || null}
+          />
+          <Dato
+            etiqueta="Vendedor"
+            valor={(() => {
+              const v = vendedores.find((x) => x.id === cliente.vendedor_id);
+              return v ? nombreVendedor(v) : null;
+            })()}
           />
           <Dato etiqueta="Notas" valor={cliente.notas} />
         </div>
@@ -287,9 +302,32 @@ export function ClienteFicha({ id }: { id: string }) {
         )}
       </div>
 
-      <div className="crm-seccion crm-proximamente">
+      <div className="crm-seccion">
         <h3>Oportunidades</h3>
-        <p className="crm-vacio">Se suman en la próxima etapa (embudo de ventas).</p>
+        {oportunidades === null && <p className="crm-vacio">Cargando…</p>}
+        {oportunidades?.length === 0 && <p className="crm-vacio">Sin oportunidades.</p>}
+        {oportunidades && oportunidades.length > 0 && (
+          <div className="crm-tabla">
+            {oportunidades.map((o) => (
+              <button key={o.id} type="button" className="crm-fila" onClick={() => ir(`/oportunidades/${o.id}`)}>
+                <div className="crm-fila-principal">
+                  <span className={`chip-etapa etapa-${o.etapa}`}>{NOMBRE_ETAPA[o.etapa]}</span>
+                  <strong>{o.nombre}</strong>
+                </div>
+                <div className="crm-fila-datos">
+                  <strong>{formatoPesos(o.monto_estimado)}</strong>
+                  <span>{o.probabilidad ?? 0}%</span>
+                  {o.proxima_accion && <span>→ {o.proxima_accion}</span>}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="crm-seccion">
+        <h3>Línea de tiempo</h3>
+        <LineaDeTiempo clienteId={cliente.id} />
       </div>
     </div>
   );

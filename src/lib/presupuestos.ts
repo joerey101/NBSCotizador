@@ -39,6 +39,7 @@ export interface PresupuestoFila {
 export interface PresupuestoCompleto {
   abierto: PresupuestoAbierto;
   clienteId: string | null;
+  vendedorId: string | null;
   cliente: DatosCliente;
   monedaPresupuesto: Moneda;
   tasas: TipoCambio;
@@ -62,6 +63,7 @@ interface DatosGuardar {
   id?: string;
   titulo: string;
   clienteId: string;
+  vendedorId: string | null;
   cliente: DatosCliente;
   monedaPresupuesto: Moneda;
   tasas: TipoCambio;
@@ -119,6 +121,14 @@ export async function guardarPresupuesto(d: DatosGuardar): Promise<PresupuestoAb
   const { data, error } = await db().rpc("guardar_cotizacion", { p_cab: cab, p_items: items });
   if (error) throw new Error(mensajeError(error));
   const r = data as { id: string; numero: string };
+
+  // vendedor elegido en el cotizador (si no hay, la base pone el del cliente o el del usuario)
+  if (d.vendedorId) {
+    const { error: ev } = await db().from("cotizaciones").update({ vendedor_id: d.vendedorId }).eq("id", r.id);
+    if (ev) throw new Error(mensajeError(ev));
+    // la oportunidad la crea el embudo al guardar: que quede con el mismo vendedor
+    await db().from("oportunidades").update({ vendedor_id: d.vendedorId }).eq("cotizacion_id", r.id);
+  }
 
   // el estado no lo toca el guardado; se lee para devolverlo actualizado
   const { data: est } = await db().from("cotizaciones").select("estado").eq("id", r.id).single();
@@ -183,6 +193,7 @@ export async function abrirPresupuesto(id: string, porId: Map<string, Producto>)
   return {
     abierto: { id: cab.id, numero: cab.numero, titulo: cab.titulo, estado: cab.estado },
     clienteId: cab.cliente_id,
+    vendedorId: cab.vendedor_id ?? null,
     cliente: {
       empresa: tieneEmpresa ? cab.cliente_nombre ?? "" : "",
       nombre: tieneEmpresa ? cab.cliente_contacto ?? "" : cab.cliente_nombre ?? "",

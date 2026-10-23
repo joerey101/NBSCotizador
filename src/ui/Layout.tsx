@@ -1,23 +1,87 @@
 // Marco de la app con sesión (misma estética que Chef Works): menú lateral azul marino,
 // barra superior con el título y, en el celular, menú desplegable + barra inferior de accesos.
+// Cada rol ve solo sus pantallas; el depósito no tiene cotizador ni nada con precios.
 import { useState, type ReactNode } from "react";
 import logoNbs from "../assets/logo_nbs.png";
 import { ir, type Ruta } from "../lib/ruta";
 import { ROL_LABELS, type Rol } from "../lib/sesion";
-import { IconoCerrar, IconoClientes, IconoCotizador, IconoMenu, IconoPresupuestos, IconoSalir } from "./Iconos";
+import {
+  IconoCerrar,
+  IconoClientes,
+  IconoComisiones,
+  IconoCotizador,
+  IconoDashboard,
+  IconoEquipo,
+  IconoEscaner,
+  IconoMenu,
+  IconoOportunidades,
+  IconoPedidos,
+  IconoPresupuestos,
+  IconoSalir,
+  IconoStock,
+} from "./Iconos";
 
-type Seccion = "cotizador" | "presupuestos" | "clientes";
+export type Seccion =
+  | "dashboard"
+  | "cotizador"
+  | "presupuestos"
+  | "oportunidades"
+  | "clientes"
+  | "equipo"
+  | "comisiones"
+  | "pedidos"
+  | "stock"
+  | "movimientos";
 
-const ITEMS: { id: Seccion; nombre: string; hash: string; Icono: (p: { size?: number }) => JSX.Element }[] = [
-  { id: "cotizador", nombre: "Cotizador", hash: "/", Icono: IconoCotizador },
-  { id: "presupuestos", nombre: "Presupuestos", hash: "/presupuestos", Icono: IconoPresupuestos },
-  { id: "clientes", nombre: "Clientes", hash: "/clientes", Icono: IconoClientes },
+interface Item {
+  id: Seccion;
+  nombre: string;
+  hash: string;
+  grupo: "General" | "Comercial" | "Inventario";
+  roles: Rol[];
+  /** roles que lo tienen en la barra inferior del celular */
+  tab: Rol[];
+  Icono: (p: { size?: number }) => JSX.Element;
+}
+
+const COM: Rol[] = ["admin", "vendedor"];
+const ITEMS: Item[] = [
+  { id: "dashboard", nombre: "Dashboard", hash: "/dashboard", grupo: "General", roles: ["admin", "vendedor", "deposito"], tab: ["deposito"], Icono: IconoDashboard },
+  { id: "cotizador", nombre: "Cotizador", hash: "/", grupo: "Comercial", roles: COM, tab: COM, Icono: IconoCotizador },
+  { id: "presupuestos", nombre: "Presupuestos", hash: "/presupuestos", grupo: "Comercial", roles: COM, tab: COM, Icono: IconoPresupuestos },
+  { id: "oportunidades", nombre: "Oportunidades", hash: "/oportunidades", grupo: "Comercial", roles: COM, tab: COM, Icono: IconoOportunidades },
+  { id: "clientes", nombre: "Clientes", hash: "/clientes", grupo: "Comercial", roles: COM, tab: COM, Icono: IconoClientes },
+  { id: "equipo", nombre: "Equipo", hash: "/equipo", grupo: "Comercial", roles: COM, tab: [], Icono: IconoEquipo },
+  { id: "comisiones", nombre: "Comisiones", hash: "/comisiones", grupo: "Comercial", roles: COM, tab: [], Icono: IconoComisiones },
+  { id: "pedidos", nombre: "Pedidos", hash: "/pedidos", grupo: "Inventario", roles: ["admin", "vendedor", "deposito"], tab: ["deposito"], Icono: IconoPedidos },
+  { id: "stock", nombre: "Stock", hash: "/stock", grupo: "Inventario", roles: ["admin", "vendedor", "deposito"], tab: ["deposito"], Icono: IconoStock },
+  { id: "movimientos", nombre: "Escanear", hash: "/movimientos", grupo: "Inventario", roles: ["admin", "deposito"], tab: ["deposito"], Icono: IconoEscaner },
 ];
 
-function seccionDe(ruta: Ruta): Seccion {
-  if (ruta.pantalla === "cotizador") return "cotizador";
-  if (ruta.pantalla === "presupuestos") return "presupuestos";
-  return "clientes";
+export function seccionDe(ruta: Ruta): Seccion {
+  switch (ruta.pantalla) {
+    case "dashboard":
+    case "cotizador":
+    case "presupuestos":
+    case "equipo":
+    case "comisiones":
+    case "pedidos":
+    case "stock":
+    case "movimientos":
+      return ruta.pantalla;
+    case "oportunidades":
+    case "oportunidad":
+      return "oportunidades";
+    case "pedido":
+      return "pedidos";
+    default:
+      return "clientes";
+  }
+}
+
+/** ¿El rol puede abrir esa pantalla? (solo navegación: los datos los protege la base) */
+export function puedeVer(rol: Rol, s: Seccion): boolean {
+  return ITEMS.some((i) => i.id === s && i.roles.includes(rol));
 }
 
 interface Props {
@@ -31,6 +95,8 @@ interface Props {
 export function Layout({ ruta, email, rol, onSalir, children }: Props) {
   const [abierto, setAbierto] = useState(false);
   const actual = seccionDe(ruta);
+  const items = ITEMS.filter((i) => i.roles.includes(rol));
+  const tabs = items.filter((i) => i.tab.includes(rol));
   const titulo = ITEMS.find((i) => i.id === actual)?.nombre ?? "NBS";
 
   const navegar = (hash: string) => {
@@ -55,22 +121,28 @@ export function Layout({ ruta, email, rol, onSalir, children }: Props) {
         </div>
 
         <nav className="ly-nav">
-          <div className="ly-seccion">
-            <div className="ly-seccion-titulo">Comercial</div>
-            {ITEMS.map(({ id, nombre, hash, Icono }) => (
-              <button
-                key={id}
-                type="button"
-                className={`ly-link ${actual === id ? "activo" : ""}`}
-                onClick={() => navegar(hash)}
-              >
-                <span className="ly-icono">
-                  <Icono size={17} />
-                </span>
-                <span>{nombre}</span>
-              </button>
-            ))}
-          </div>
+          {(["General", "Comercial", "Inventario"] as const).map((grupo) => {
+            const delGrupo = items.filter((i) => i.grupo === grupo);
+            if (!delGrupo.length) return null;
+            return (
+              <div key={grupo} className="ly-seccion">
+                <div className="ly-seccion-titulo">{grupo}</div>
+                {delGrupo.map(({ id, nombre, hash, Icono }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`ly-link ${actual === id ? "activo" : ""}`}
+                    onClick={() => navegar(hash)}
+                  >
+                    <span className="ly-icono">
+                      <Icono size={17} />
+                    </span>
+                    <span>{nombre}</span>
+                  </button>
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="ly-usuario">
@@ -96,8 +168,8 @@ export function Layout({ ruta, email, rol, onSalir, children }: Props) {
         <main className="ly-contenido">{children}</main>
       </div>
 
-      <nav className="ly-tabbar" aria-label="Accesos rápidos">
-        {ITEMS.map(({ id, nombre, hash, Icono }) => (
+      <nav className="ly-tabbar" aria-label="Accesos rápidos" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+        {tabs.map(({ id, nombre, hash, Icono }) => (
           <button key={id} type="button" className={`ly-tab ${actual === id ? "activo" : ""}`} onClick={() => navegar(hash)}>
             <Icono size={21} />
             <span>{nombre}</span>

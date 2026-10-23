@@ -12,6 +12,7 @@ import {
   type ClienteFila,
 } from "../../lib/clientes";
 import { ir } from "../../lib/ruta";
+import { VendedorSelect } from "./VendedorSelect";
 
 const ETIQUETA_TIPO: Record<(typeof TIPOS_CLIENTE)[number], string> = {
   empresa: "Empresa",
@@ -112,6 +113,10 @@ export function ClienteForm({ inicial, id, onGuardado, onCancelar }: Props) {
         <label>
           País
           <input {...texto("pais")} />
+        </label>
+        <label>
+          Vendedor
+          <VendedorSelect value={c.vendedor_id} onChange={(id) => set("vendedor_id", id)} />
         </label>
         <label className="crm-ancho">
           Notas

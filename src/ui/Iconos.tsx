@@ -42,12 +42,72 @@ export const IconoPresupuestos = (p: P) => (
   </Svg>
 );
 
+export const IconoOportunidades = (p: P) => (
+  <Svg {...p}>
+    <rect x="2" y="7" width="20" height="14" rx="2" />
+    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+  </Svg>
+);
+
 export const IconoClientes = (p: P) => (
   <Svg {...p}>
     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
     <circle cx="9" cy="7" r="4" />
     <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </Svg>
+);
+
+export const IconoEquipo = (p: P) => (
+  <Svg {...p}>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <polyline points="16 11 18 13 22 9" />
+  </Svg>
+);
+
+export const IconoComisiones = (p: P) => (
+  <Svg {...p}>
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </Svg>
+);
+
+export const IconoPedidos = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <path d="M16 10a4 4 0 0 1-8 0" />
+  </Svg>
+);
+
+export const IconoStock = (p: P) => (
+  <Svg {...p}>
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+    <line x1="12" y1="22.08" x2="12" y2="12" />
+  </Svg>
+);
+
+export const IconoEscaner = (p: P) => (
+  <Svg {...p}>
+    <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+    <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+    <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+    <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+    <line x1="7" y1="8" x2="7" y2="16" />
+    <line x1="11" y1="8" x2="11" y2="16" />
+    <line x1="14" y1="8" x2="14" y2="16" />
+    <line x1="17" y1="8" x2="17" y2="16" />
+  </Svg>
+);
+
+export const IconoDashboard = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="3" width="7" height="9" rx="1" />
+    <rect x="14" y="3" width="7" height="5" rx="1" />
+    <rect x="14" y="12" width="7" height="9" rx="1" />
+    <rect x="3" y="16" width="7" height="5" rx="1" />
   </Svg>
 );
 

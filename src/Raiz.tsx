@@ -2,19 +2,27 @@
 //   sin Supabase configurado → la app como siempre (sin login)
 //   sin sesión               → Login
 //   link de recuperación     → NuevaClave
-//   admin / vendedor         → menú lateral (Cotizador, Presupuestos, Clientes)
-//   deposito                 → (stock y pedidos llegan en la etapa 6)
+//   admin / vendedor         → menú lateral (Cotizador, Presupuestos, Oportunidades, Clientes)
+//   deposito                 → Pedidos, Stock y Escanear (sin cotizador ni precios)
 //   sin rol                  → aviso, sin datos
 import App from "./App";
 import { CLIENTE_VACIO } from "./lib/clientes";
 import { ir, useRuta, type Ruta } from "./lib/ruta";
-import { ROL_LABELS, useSesion, type Rol } from "./lib/sesion";
+import { RolContext, ROL_LABELS, useSesion, type Rol } from "./lib/sesion";
 import { recargarApp, supabase } from "./lib/supabase";
 import { ClienteFicha } from "./ui/crm/ClienteFicha";
 import { ClienteForm } from "./ui/crm/ClienteForm";
 import { ClientesLista } from "./ui/crm/ClientesLista";
+import { Comisiones } from "./ui/crm/Comisiones";
+import { Dashboard } from "./ui/crm/Dashboard";
+import { Equipo } from "./ui/crm/Equipo";
+import { OportunidadFicha } from "./ui/crm/OportunidadFicha";
+import { Oportunidades } from "./ui/crm/Oportunidades";
 import { PresupuestosLista } from "./ui/crm/PresupuestosLista";
-import { Layout } from "./ui/Layout";
+import { Layout, puedeVer, seccionDe } from "./ui/Layout";
+import { Movimientos } from "./ui/stock/Movimientos";
+import { PedidoFicha, PedidosLista } from "./ui/stock/Pedidos";
+import { Stock } from "./ui/stock/Stock";
 import { Login } from "./ui/Login";
 import { NuevaClave } from "./ui/NuevaClave";
 
@@ -31,6 +39,24 @@ function PantallaCrm({ ruta }: { ruta: Ruta }) {
   switch (ruta.pantalla) {
     case "presupuestos":
       return <PresupuestosLista />;
+    case "oportunidades":
+      return <Oportunidades />;
+    case "oportunidad":
+      return <OportunidadFicha id={ruta.id} />;
+    case "equipo":
+      return <Equipo />;
+    case "comisiones":
+      return <Comisiones />;
+    case "dashboard":
+      return <Dashboard />;
+    case "pedidos":
+      return <PedidosLista />;
+    case "pedido":
+      return <PedidoFicha id={ruta.id} />;
+    case "stock":
+      return <Stock />;
+    case "movimientos":
+      return <Movimientos />;
     case "clientes":
       return <ClientesLista />;
     case "cliente":
@@ -88,29 +114,41 @@ export function Raiz() {
       const email = estado.session.user.email ?? "";
       const { rol } = estado;
       if (rol === "admin" || rol === "vendedor") {
+        if (!puedeVer(rol, seccionDe(ruta)) && ruta.pantalla !== "cliente_nuevo") {
+          ir("/");
+          return null;
+        }
         const enCotizador = ruta.pantalla === "cotizador";
         return (
+          <RolContext.Provider value={rol}>
           <Layout ruta={ruta} email={email} rol={rol} onSalir={salir}>
             {/* el cotizador queda montado: al volver de otra pantalla el presupuesto sigue igual */}
             <div style={{ display: enCotizador ? undefined : "none" }}>
               <App />
             </div>
             {!enCotizador && (
-              <div className="app">
+              <div className={ruta.pantalla === "oportunidades" || ruta.pantalla === "dashboard" ? "app app-ancho" : "app"}>
                 <PantallaCrm ruta={ruta} />
               </div>
             )}
           </Layout>
+          </RolContext.Provider>
         );
       }
       if (rol === "deposito") {
+        // el depósito nunca monta el cotizador (precios): arranca en su Dashboard
+        if (!puedeVer(rol, seccionDe(ruta))) {
+          ir("/dashboard");
+          return null;
+        }
         return (
-          <Aviso
-            titulo="Stock y pedidos"
-            texto="Tu usuario es de depósito. Las pantallas de stock, escáner y pedidos (sin precios) se suman en una próxima etapa."
-            email={email}
-            rol={rol}
-          />
+          <RolContext.Provider value={rol}>
+            <Layout ruta={ruta} email={email} rol={rol} onSalir={salir}>
+              <div className="app">
+                <PantallaCrm ruta={ruta} />
+              </div>
+            </Layout>
+          </RolContext.Provider>
         );
       }
       return (

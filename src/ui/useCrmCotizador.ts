@@ -12,6 +12,9 @@ import {
   type PresupuestoAbierto,
 } from "../lib/presupuestos";
 import { escucharPedidos } from "../lib/eventos";
+import { miVendedorId } from "../lib/equipo";
+import { crearPedidoDesdePresupuesto } from "../lib/stock";
+import { ir } from "../lib/ruta";
 import { supabase } from "../lib/supabase";
 import { cargarClienteConPrincipal, datosDesdeCliente } from "./crm/ClienteSelector";
 import type { CrmPanel } from "./CotizacionPanel";
@@ -48,6 +51,7 @@ export function useCrmCotizador(p: Params): CrmPanel | undefined {
   const [abierto, setAbierto] = useLocalStorage<PresupuestoAbierto | null>("nbs_cot_abierto", null);
   const [clienteId, setClienteId] = useLocalStorage<string | null>("nbs_cot_cliente_id", null);
   const [firmaGuardada, setFirmaGuardada] = useLocalStorage<string | null>("nbs_cot_firma", null);
+  const [vendedorId, setVendedorId] = useLocalStorage<string | null>("nbs_cot_vendedor_id", null);
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState<CrmPanel["aviso"]>(null);
 
@@ -72,6 +76,12 @@ export function useCrmCotizador(p: Params): CrmPanel | undefined {
     setAviso(null);
   };
 
+  // Vendedor por defecto: el del usuario conectado (por su email)
+  useEffect(() => {
+    if (!supabase || vendedorId) return;
+    miVendedorId().then((id) => id && setVendedorId(id));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Pedidos desde otras pantallas. El listener se registra una vez y usa siempre lo último.
   const ultimo = useRef({ p, sinGuardar, nuevo });
   ultimo.current = { p, sinGuardar, nuevo };
@@ -88,6 +98,7 @@ export function useCrmCotizador(p: Params): CrmPanel | undefined {
           p.setTc(d.tasas);
           p.setCliente(d.cliente);
           setClienteId(d.clienteId);
+          if (d.vendedorId) setVendedorId(d.vendedorId);
           setAbierto(d.abierto);
           setFirmaGuardada(
             firma({ lineas: d.lineas, descuento: d.descuento, cliente: d.cliente, monedaPresupuesto: d.monedaPresupuesto, tc: d.tasas })
@@ -110,6 +121,11 @@ export function useCrmCotizador(p: Params): CrmPanel | undefined {
   return {
     abierto,
     clienteVinculado: !!clienteId,
+    vendedorId,
+    onVendedor: (id, nombre) => {
+      setVendedorId(id);
+      if (nombre) p.setCliente({ ...p.cliente, vendedor: nombre });
+    },
     sinGuardar,
     guardando,
     aviso,
@@ -134,6 +150,7 @@ export function useCrmCotizador(p: Params): CrmPanel | undefined {
           id: abierto?.id,
           titulo: titulo || "",
           clienteId,
+          vendedorId,
           cliente: p.cliente,
           monedaPresupuesto: p.monedaPresupuesto,
           tasas: p.tc,
@@ -164,5 +181,19 @@ export function useCrmCotizador(p: Params): CrmPanel | undefined {
       }
     },
     onNuevo: () => nuevo(true),
+    onCrearPedido: async () => {
+      if (!abierto) return;
+      if (sinGuardar) {
+        avisar({ tipo: "error", texto: "Guardá los cambios antes de crear el pedido." });
+        return;
+      }
+      try {
+        const r = await crearPedidoDesdePresupuesto(abierto.id);
+        avisar({ tipo: "ok", texto: r.existente ? `Ya existía el pedido ${r.numero}.` : `Pedido ${r.numero} creado.` });
+        ir(`/pedidos/${r.id}`);
+      } catch (e) {
+        avisar({ tipo: "error", texto: (e as Error).message });
+      }
+    },
   };
 }

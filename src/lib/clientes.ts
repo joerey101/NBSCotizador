@@ -19,6 +19,7 @@ export interface Cliente {
   provincia: string | null;
   pais: string | null;
   notas: string | null;
+  vendedor_id: string | null;
   activo: boolean;
   creado_en: string;
   actualizado_en: string;
@@ -54,6 +55,7 @@ export const CLIENTE_VACIO: ClienteEditable = {
   provincia: null,
   pais: "Argentina",
   notas: null,
+  vendedor_id: null,
 };
 
 export const CONTACTO_VACIO: ContactoEditable = {

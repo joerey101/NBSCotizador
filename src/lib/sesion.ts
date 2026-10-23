@@ -1,7 +1,7 @@
 // Sesión y rol del usuario. El rol viene de app_metadata.rol (lo asigna un admin; el usuario
 // no lo puede cambiar). Esto solo decide qué pantallas se muestran: la seguridad real de los
 // datos está en la base (RLS con public.rol_actual()).
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { llegoPorRecuperacion, supabase } from "./supabase";
 
@@ -13,6 +13,10 @@ export const ROL_LABELS: Record<Rol, string> = {
   deposito: "Depósito",
   sin_acceso: "Sin acceso",
 };
+
+/** Rol del usuario para las pantallas (solo decide qué se muestra; la seguridad está en la base). */
+export const RolContext = createContext<Rol>("sin_acceso");
+export const useRol = () => useContext(RolContext);
 
 export function rolDe(session: Session | null): Rol {
   const r = session?.user.app_metadata?.rol;

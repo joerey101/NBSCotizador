@@ -5,6 +5,7 @@ import { formatoMoneda } from "../lib/pricing";
 import { LineaRow } from "./LineaRow";
 import { ClienteModal } from "./ClienteModal";
 import { ClienteSelector } from "./crm/ClienteSelector";
+import { VendedorSelect } from "./crm/VendedorSelect";
 import type { Cliente, Contacto } from "../lib/clientes";
 import { ESTADO_LABELS, type EstadoPresupuesto, type PresupuestoAbierto } from "../lib/presupuestos";
 
@@ -16,9 +17,12 @@ export interface CrmPanel {
   guardando: boolean;
   aviso: { tipo: "ok" | "error"; texto: string } | null;
   onElegirCliente: (c: Cliente, contacto: Contacto | null) => void;
+  vendedorId: string | null;
+  onVendedor: (id: string | null, nombre: string) => void;
   onGuardar: () => void;
   onEstado: (e: EstadoPresupuesto) => void;
   onNuevo: () => void;
+  onCrearPedido: () => void;
 }
 
 interface Props {
@@ -80,6 +84,13 @@ export function CotizacionPanel(props: Props) {
             <span className="cot-sin-numero">Presupuesto sin guardar</span>
           )}
         </div>
+      )}
+
+      {crm && (
+        <label className="cot-vendedor">
+          <span>Vendedor</span>
+          <VendedorSelect className="cot-estado" value={crm.vendedorId} onChange={crm.onVendedor} />
+        </label>
       )}
 
       {/* Resumen del Cliente */}
@@ -214,6 +225,11 @@ export function CotizacionPanel(props: Props) {
           {(crm.abierto || lineas.length > 0) && (
             <button type="button" className="btn-sec" onClick={crm.onNuevo} title="Empezar un presupuesto nuevo en blanco">
               + Nuevo
+            </button>
+          )}
+          {crm.abierto?.estado === "aprobada" && (
+            <button type="button" className="btn-sec" onClick={crm.onCrearPedido} title="Crear el pedido para preparar en el depósito">
+              📦 Crear pedido
             </button>
           )}
         </div>
