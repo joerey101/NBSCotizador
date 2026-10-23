@@ -20,6 +20,7 @@ export interface Producto {
   archivo_origen: string;
   hoja_origen: string;
   imagen: string | null;  // data URI base64 de la foto del producto, o null
+  stock: number | null;   // unidades en stock (por ahora solo Verbano), o null si no hay dato
 }
 
 export interface CatalogoMetadata {
@@ -45,6 +46,7 @@ export interface Catalogo {
 
 export interface Filtros {
   origen: string | "";
+  familia: string | ""; // línea dentro del origen (ej. Verbano: Provenza, Marzia…); SIN_FAMILIA = sin línea
   categoria: string | "";
   moneda: Moneda | "";
 }

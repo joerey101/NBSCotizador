@@ -42,8 +42,11 @@ export function crearIndice(productos: Producto[]): MiniSearch<Producto> {
   return mini;
 }
 
+export const SIN_FAMILIA = "__sin_familia__";
+
 function pasaFiltros(p: Producto, f: Filtros): boolean {
   if (f.origen && p.origen !== f.origen) return false;
+  if (f.familia && (p.linea ?? SIN_FAMILIA) !== f.familia) return false;
   if (f.categoria && (p.categoria ?? "") !== f.categoria) return false;
   if (f.moneda && p.moneda !== f.moneda) return false;
   return true;
@@ -56,7 +59,9 @@ export interface ResultadoBusqueda {
 
 /**
  * Busca por texto (opcional) + filtros. Sin texto => devuelve todo lo filtrado
- * ordenado por origen y producto. `limite` recorta para no renderizar miles.
+ * ordenado por origen y, dentro de cada origen, en el orden de la lista del
+ * proveedor (familia por familia: Provenza, Marzia, Tavola…). `limite` recorta
+ * para no renderizar miles.
  */
 export function buscar(
   query: string,
@@ -72,11 +77,8 @@ export function buscar(
   if (q.length === 0) {
     base = productos
       .filter((p) => pasaFiltros(p, filtros))
-      .sort(
-        (a, b) =>
-          a.origen.localeCompare(b.origen, "es") ||
-          a.producto.localeCompare(b.producto, "es")
-      );
+      // sort estable: solo agrupa por origen y respeta el orden del catálogo
+      .sort((a, b) => a.origen.localeCompare(b.origen, "es"));
   } else {
     const hits = indice.search(q);
     base = [];
@@ -87,6 +89,17 @@ export function buscar(
   }
 
   return { items: base.slice(0, limite), total: base.length };
+}
+
+/** Familias (líneas) de un origen, en el orden de la lista del proveedor, con su cantidad. */
+export function familiasDeOrigen(productos: Producto[], origen: string) {
+  const cuenta = new Map<string, number>();
+  for (const p of productos) {
+    if (p.origen !== origen) continue;
+    const k = p.linea ?? SIN_FAMILIA;
+    cuenta.set(k, (cuenta.get(k) ?? 0) + 1);
+  }
+  return [...cuenta].map(([valor, n]) => ({ valor, n }));
 }
 
 /** Valores únicos para poblar los filtros, ordenados en español. */

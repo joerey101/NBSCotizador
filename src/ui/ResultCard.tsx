@@ -63,6 +63,11 @@ export function ResultCard({ p, monedaPresupuesto, tc, onAgregar }: Props) {
           </span>
           {p.linea && <span className="chip chip-linea">Línea: {p.linea}</span>}
           {p.modelo && <span className="chip chip-linea">Acabado: {p.modelo}</span>}
+          {p.stock != null && (
+            <span className={"chip " + (p.stock > 0 ? "chip-stock" : "chip-sinstock")}>
+              {p.stock > 0 ? `Stock: ${p.stock}` : "Sin stock"}
+            </span>
+          )}
           <span className="chip chip-pres">{p.presentacion}</span>
           {p.categoria && <span className="chip chip-cat">{p.categoria}</span>}
           <span className="chip chip-moneda">{p.moneda}</span>

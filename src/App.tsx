@@ -1,7 +1,7 @@
 import { useEffect, useDeferredValue, useMemo, useState } from "react";
 import { catalogo } from "./data/catalogo";
 import type { DatosCliente, Filtros, Moneda, TipoCambio } from "./lib/types";
-import { crearIndice, buscar, opcionesFiltro } from "./lib/search";
+import { crearIndice, buscar, familiasDeOrigen, opcionesFiltro } from "./lib/search";
 import { calcularTotales } from "./lib/cotizacion";
 import { RateBar } from "./ui/RateBar";
 import { FiltrosBar } from "./ui/Filtros";
@@ -40,7 +40,11 @@ export default function App() {
   const opciones = useMemo(() => opcionesFiltro(productos), [productos]);
 
   const [query, setQuery] = useState("");
-  const [filtros, setFiltros] = useState<Filtros>({ origen: "", categoria: "", moneda: "" });
+  const [filtros, setFiltros] = useState<Filtros>({ origen: "", familia: "", categoria: "", moneda: "" });
+  const familias = useMemo(
+    () => (filtros.origen ? familiasDeOrigen(productos, filtros.origen) : []),
+    [productos, filtros.origen]
+  );
   const [monedaPresupuesto, setMoneda] = useLocalStorage<Moneda>("nbs_moneda", "ARS");
   const [tc, setTc] = useLocalStorage<TipoCambio>("nbs_tasas", { USD_ARS: null, EUR_ARS: null, fecha: null });
   const [cliente, setCliente] = useLocalStorage<DatosCliente>("nbs_cliente", CLIENTE_DEFAULT);
@@ -142,7 +146,7 @@ export default function App() {
                 </button>
               )}
             </div>
-            <FiltrosBar filtros={filtros} opciones={opciones} onChange={setFiltros} />
+            <FiltrosBar filtros={filtros} opciones={opciones} familias={familias} onChange={setFiltros} />
           </div>
 
           <div className="resultados-info">
