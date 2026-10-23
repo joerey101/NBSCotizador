@@ -17,9 +17,10 @@ export default defineConfig({
         // Límite generoso porque el bundle con catálogo completo de 8.777 productos es grande
         maximumFileSizeToCacheInBytes: 150 * 1024 * 1024,
         // Estrategia: servir desde caché primero, actualizar en background
+        // Supabase (datos del CRM y login) nunca se cachea: siempre va a la red.
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*/,
+            urlPattern: ({ url }) => url.protocol === "https:" && !url.hostname.endsWith(".supabase.co"),
             handler: "NetworkFirst",
             options: {
               cacheName: "nbs-runtime",

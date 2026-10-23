@@ -4,6 +4,22 @@ import type { Descuento, LineaCotizacion, Totales } from "../lib/cotizacion";
 import { formatoMoneda } from "../lib/pricing";
 import { LineaRow } from "./LineaRow";
 import { ClienteModal } from "./ClienteModal";
+import { ClienteSelector } from "./crm/ClienteSelector";
+import type { Cliente, Contacto } from "../lib/clientes";
+import { ESTADO_LABELS, type EstadoPresupuesto, type PresupuestoAbierto } from "../lib/presupuestos";
+
+/** Guardado en Supabase (solo con CRM configurado y sesión). */
+export interface CrmPanel {
+  abierto: PresupuestoAbierto | null;
+  clienteVinculado: boolean;
+  sinGuardar: boolean;
+  guardando: boolean;
+  aviso: { tipo: "ok" | "error"; texto: string } | null;
+  onElegirCliente: (c: Cliente, contacto: Contacto | null) => void;
+  onGuardar: () => void;
+  onEstado: (e: EstadoPresupuesto) => void;
+  onNuevo: () => void;
+}
 
 interface Props {
   lineas: LineaCotizacion[];
@@ -20,11 +36,13 @@ interface Props {
   onExportar: () => void;
   onImportar: (file: File) => void;
   onDescargarExcel: () => void;
+  crm?: CrmPanel;
 }
 
 export function CotizacionPanel(props: Props) {
-  const { lineas, totales, monedaPresupuesto, descuento, cliente } = props;
+  const { lineas, totales, monedaPresupuesto, descuento, cliente, crm } = props;
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [eligiendoCliente, setEligiendoCliente] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const fmt = (n: number) => formatoMoneda(n, monedaPresupuesto);
 
@@ -37,20 +55,61 @@ export function CotizacionPanel(props: Props) {
         <span className="cot-count">{lineas.length} ítem{lineas.length === 1 ? "" : "s"}</span>
       </div>
 
+      {crm && (
+        <div className="cot-guardado">
+          {crm.abierto ? (
+            <>
+              <div className="cot-numero">
+                <strong>{crm.abierto.numero}</strong>
+                {crm.abierto.titulo && <span title={crm.abierto.titulo}>{crm.abierto.titulo}</span>}
+              </div>
+              <select
+                className={`cot-estado estado-${crm.abierto.estado}`}
+                value={crm.abierto.estado}
+                onChange={(e) => crm.onEstado(e.target.value as EstadoPresupuesto)}
+                aria-label="Estado del presupuesto"
+              >
+                {(Object.keys(ESTADO_LABELS) as EstadoPresupuesto[]).map((e) => (
+                  <option key={e} value={e}>
+                    {ESTADO_LABELS[e]}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : (
+            <span className="cot-sin-numero">Presupuesto sin guardar</span>
+          )}
+        </div>
+      )}
+
       {/* Resumen del Cliente */}
       <div className="cliente-summary-card">
         <div className="cliente-info">
-          <span className="cliente-label">Cliente asignado:</span>
+          <span className="cliente-label">
+            Cliente asignado:{crm?.clienteVinculado && <span className="cot-vinculado"> ✓ de la lista</span>}
+          </span>
           <span className="cliente-val" title={clienteNombreMostrar}>{clienteNombreMostrar}</span>
         </div>
-        <button
-          type="button"
-          className="btn-edit-cliente"
-          onClick={() => setModalAbierto(true)}
-          title="Editar datos de cabecera del cliente para el Excel"
-        >
-          ✏ Datos Cliente
-        </button>
+        <div className="cliente-botones">
+          {crm && (
+            <button
+              type="button"
+              className="btn-edit-cliente"
+              onClick={() => setEligiendoCliente(true)}
+              title="Elegir el cliente de la lista de Clientes (o crearlo)"
+            >
+              👤 Elegir cliente
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn-edit-cliente"
+            onClick={() => setModalAbierto(true)}
+            title="Editar datos de cabecera del cliente para el Excel"
+          >
+            ✏ Datos Cliente
+          </button>
+        </div>
       </div>
 
       {lineas.length === 0 ? (
@@ -142,6 +201,26 @@ export function CotizacionPanel(props: Props) {
         </>
       )}
 
+      {crm && (
+        <div className="cot-crm-acciones">
+          <button
+            type="button"
+            className="btn-guardar-cot"
+            onClick={crm.onGuardar}
+            disabled={lineas.length === 0 || crm.guardando}
+          >
+            {crm.guardando ? "Guardando…" : crm.abierto ? `💾 Guardar ${crm.abierto.numero}` : "💾 Guardar presupuesto"}
+          </button>
+          {(crm.abierto || lineas.length > 0) && (
+            <button type="button" className="btn-sec" onClick={crm.onNuevo} title="Empezar un presupuesto nuevo en blanco">
+              + Nuevo
+            </button>
+          )}
+        </div>
+      )}
+      {crm?.sinGuardar && crm.abierto && !crm.aviso && <div className="cot-aviso-crm">Hay cambios sin guardar.</div>}
+      {crm?.aviso && <div className={`cot-aviso-crm ${crm.aviso.tipo}`}>{crm.aviso.texto}</div>}
+
       {/* Botón Principal de Descarga Excel */}
       <div className="cot-excel-block">
         <button
@@ -200,17 +279,30 @@ export function CotizacionPanel(props: Props) {
         />
       </div>
 
-      <ClienteModal
-        abierto={modalAbierto}
-        cliente={cliente}
-        onGuardar={props.onCliente}
-        onCerrar={() => setModalAbierto(false)}
-        onDescargarExcel={() => {
-          setModalAbierto(false);
-          props.onDescargarExcel();
-        }}
-        cantLineas={lineas.length}
-      />
+      {/* se monta al abrir: así toma los datos actuales (p. ej. después de elegir un cliente) */}
+      {modalAbierto && (
+        <ClienteModal
+          abierto
+          cliente={cliente}
+          onGuardar={props.onCliente}
+          onCerrar={() => setModalAbierto(false)}
+          onDescargarExcel={() => {
+            setModalAbierto(false);
+            props.onDescargarExcel();
+          }}
+          cantLineas={lineas.length}
+        />
+      )}
+
+      {crm && eligiendoCliente && (
+        <ClienteSelector
+          onCerrar={() => setEligiendoCliente(false)}
+          onElegir={(c, contacto) => {
+            crm.onElegirCliente(c, contacto);
+            setEligiendoCliente(false);
+          }}
+        />
+      )}
     </aside>
   );
 }

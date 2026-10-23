@@ -9,6 +9,7 @@ import { ResultCard } from "./ui/ResultCard";
 import { CotizacionPanel } from "./ui/CotizacionPanel";
 import { useLocalStorage } from "./ui/useLocalStorage";
 import { useCotizacion } from "./ui/useCotizacion";
+import { useCrmCotizador } from "./ui/useCrmCotizador";
 import { exportarCotizacion, parseCotizacion } from "./ui/draft";
 import { exportarPresupuestoExcel } from "./lib/exportExcel";
 import logoNbs from "./assets/logo_nbs.png";
@@ -67,6 +68,21 @@ export default function App() {
     [cot.lineas, cot.descuento, monedaPresupuesto, tc]
   );
 
+  const crm = useCrmCotizador({
+    lineas: cot.lineas,
+    descuento: cot.descuento,
+    reemplazar: cot.reemplazar,
+    cliente,
+    setCliente,
+    clienteDefault: { ...CLIENTE_DEFAULT, fecha: new Date().toISOString().slice(0, 10) },
+    monedaPresupuesto,
+    setMoneda,
+    tc,
+    setTc,
+    totales,
+    porId,
+  });
+
   const onImportar = async (file: File) => {
     try {
       const d = parseCotizacion(await file.text());
@@ -89,6 +105,7 @@ export default function App() {
         cliente,
         descuento: cot.descuento,
         monedaPresupuesto,
+        numero: crm?.abierto?.numero,
       });
     } catch (err) {
       console.error(err);
@@ -191,6 +208,7 @@ export default function App() {
             }
             onImportar={onImportar}
             onDescargarExcel={handleDescargarExcel}
+            crm={crm}
           />
         </div>
       </div>

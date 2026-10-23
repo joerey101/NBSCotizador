@@ -11,6 +11,7 @@ export interface ExportExcelParams {
   cliente: DatosCliente;
   descuento: Descuento;
   monedaPresupuesto: Moneda;
+  numero?: string; // COT-0001 si el presupuesto está guardado
 }
 
 const NOMBRES_MONEDA: Record<Moneda, string> = {
@@ -91,6 +92,7 @@ export async function exportarPresupuestoExcel({
   cliente,
   descuento,
   monedaPresupuesto,
+  numero,
 }: ExportExcelParams): Promise<void> {
   const wb = new ExcelJS.Workbook();
   wb.creator = "NBS Bazar Profesional";
@@ -179,7 +181,7 @@ export async function exportarPresupuestoExcel({
   // 3. Banner "Presupuesto" (Fila 10)
   ws.mergeCells("B10:F10");
   const bannerCell = ws.getCell("B10");
-  bannerCell.value = "Presupuesto";
+  bannerCell.value = numero ? `Presupuesto ${numero}` : "Presupuesto";
   bannerCell.font = { name: "Times New Roman", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
   bannerCell.alignment = { horizontal: "center", vertical: "middle" };
   bannerCell.fill = {
@@ -453,7 +455,7 @@ export async function exportarPresupuestoExcel({
   const clienteLimpio = (cliente.empresa || cliente.nombre || "Cliente").replace(/[^a-zA-Z0-9_-]/g, "_");
   const fechaStamp = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `Presupuesto_NBS_${clienteLimpio}_${fechaStamp}.xlsx`;
+  a.download = `Presupuesto_NBS_${numero ? `${numero}_` : ""}${clienteLimpio}_${fechaStamp}.xlsx`;
   document.body.appendChild(a);
   a.click();
   a.remove();
